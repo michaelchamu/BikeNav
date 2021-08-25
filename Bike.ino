@@ -1,10 +1,14 @@
+#include <SPI.h>
+#include <WiFiNINA.h>
 #include "Keypad.h"
 #include "Adafruit_GPS.h"
 #include "Adafruit_Sensor.h"
 #include "math.h"
 #include "MPU9250.h"
+#include <ArduinoHttpClient.h>
 
- #define mySerial Serial1
+
+#define mySerial Serial1
 Adafruit_GPS GPS(&mySerial);
 // Set GPSECHO to 'false' to turn off echoing the GPS data to the Serial console
 // Set to 'true' if you want to debug and listen to the raw GPS sentences. 
@@ -35,9 +39,11 @@ byte colPins[COLS] = {5, 4, 3, 2};  //connect to the column pinouts of the keypa
 //initialize an instance of class NewKeypad
 Keypad customKeypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS); 
 
-
 //magenotometer values
 MPU9250 mpu;
+
+//http client setup
+int port = 8080;
 void setup() {
   //configure and test vibration
   //configure and test IMU and accelerometer
@@ -132,5 +138,6 @@ void keyPadControl(){
 void screenControl(){}
 void controlVibration(){}
 /*sends location cordinates, range and other data to ONLINE*/
-void syncData(){
+void syncData(float longitude, float latitude, float range){
+  
 }
