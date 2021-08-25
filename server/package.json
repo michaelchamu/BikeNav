@@ -23,7 +23,6 @@
   },
   "homepage": "https://github.com/michaelchamu/BikeNav#readme",
   "dependencies": {
-    "body-parser": "^1.19.0",
     "express": "^4.17.1"
   }
 }
