@@ -131,3 +131,6 @@ void keyPadControl(){
 }
 void screenControl(){}
 void controlVibration(){}
+/*sends location cordinates, range and other data to ONLINE*/
+void syncData(){
+}

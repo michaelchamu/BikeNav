@@ -1,0 +1,29 @@
+{
+  "name": "bike.api",
+  "version": "1.0.0",
+  "description": "api to handle bike nav system",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/michaelchamu/BikeNav.git"
+  },
+  "keywords": [
+    "Arduino",
+    "Bike",
+    "Nav"
+  ],
+  "author": "Michael Chamunorwa",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/michaelchamu/BikeNav/issues"
+  },
+  "homepage": "https://github.com/michaelchamu/BikeNav#readme",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1"
+  }
+}
