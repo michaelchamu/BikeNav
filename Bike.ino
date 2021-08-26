@@ -142,7 +142,7 @@ void getLocation(){
     Serial.println(GPS.year, DEC);
     Serial.print("Fix: "); Serial.print((int)GPS.fix);
     Serial.print(" quality: "); Serial.println((int)GPS.fixquality);
-    if (GPS.fix) {
+    if (!GPS.fix) {
       Serial.print("Location: ");
       Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
       Serial.print(", ");
