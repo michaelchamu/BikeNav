@@ -1,18 +1,17 @@
 #include <SPI.h>
-#include <WiFiNINA.h>
 #include "Keypad.h"
 #include "Adafruit_GPS.h"
 #include "Adafruit_Sensor.h"
 #include "math.h"
 #include "MPU9250.h"
-#include <ArduinoHttpClient.h>
-
+#include "arduino_secrets.h"
+#include <WiFiNINA.h>
 
 #define mySerial Serial1
 Adafruit_GPS GPS(&mySerial);
 // Set GPSECHO to 'false' to turn off echoing the GPS data to the Serial console
 // Set to 'true' if you want to debug and listen to the raw GPS sentences. 
-#define GPSECHO  true
+#define GPSECHO  false
 // this keeps track of whether we're using the interrupt
 // off by default!
 boolean usingInterrupt = false;
@@ -43,8 +42,15 @@ Keypad customKeypad = Keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS);
 MPU9250 mpu;
 
 //http client setup
-int port = 8080;
+int status = WL_IDLE_STATUS;
+IPAddress server(192,168,1,184); // server address always use the actual IP not localhost :P
+char ssid[] = SECRET_SSID;
+char pass[] = SECRET_PASS;
+int port = 3000;
+WiFiClient client;
+
 void setup() {
+
   //configure and test vibration
   //configure and test IMU and accelerometer
    Wire.begin();
@@ -73,6 +79,8 @@ void setup() {
     timer = millis();
   //swtch on screen
   //configure LED
+    //configure and test WiFi
+
 }
 
 void loop() {
@@ -84,6 +92,7 @@ void loop() {
   //fetch location data
   getLocation();
   getIMUData();
+  //syncData(20, 30, 40);
 }
 void getLocation(){
   // in case you are not using the interrupt above, you'll
@@ -104,9 +113,9 @@ void getLocation(){
             
             //get location here
             //mySerial.println(GPS.read());
-            Serial.print("Location: ");
+            Serial.println("Location: ");
             
-            mySerial.print(GPS.latitude, 4); 
+            mySerial.println(GPS.latitude, 4); 
             //mySerial.print(GPS.lat);
             //mySerial.println(String(GPS.lat) + String(GPS.latitude));
             //mySerial.println(String(GPS.lon) + String(GPS.longitude));
@@ -138,6 +147,14 @@ void keyPadControl(){
 void screenControl(){}
 void controlVibration(){}
 /*sends location cordinates, range and other data to ONLINE*/
-void syncData(float longitude, float latitude, float range){
+/*void syncData(float longitude, float latitude, float range){
+  Serial.println("making GET request");
   
-}
+  String getQuery = "{\"longitude\": 34, \"latitude\": 72, \"range\": 5}";
+  client.beginRequest();
+  client.get("127.0.0.1:3000/location-details");
+  client.endRequest();
+  String message = client.responseBody();
+  Serial.println(message);
+ 
+}*/
