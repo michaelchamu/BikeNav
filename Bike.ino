@@ -3,7 +3,6 @@
 #include <SPI.h>
 #include "Keypad.h"
 #include "Adafruit_GPS.h"
-#include "Adafruit_Sensor.h"
 #include "math.h"
 #include "MPU9250.h"
 #include "arduino_secrets.h"
@@ -47,11 +46,9 @@ int status = WL_IDLE_STATUS;
 IPAddress server(192,168,1,184); // server address always use the actual IP not localhost :P
 char ssid[] = SECRET_SSID;
 char pass[] = SECRET_PASS;
-int port = 3000;
 WiFiClient client;
 
 void setup() {
-
   //configure and test vibration
   //configure and test IMU and accelerometer
    Wire.begin();
@@ -88,6 +85,12 @@ void setup() {
     status = WiFi.begin(ssid, pass);
     delay(10000);
   }
+   Serial.print("SSID: ");
+    Serial.println(WiFi.SSID());
+    IPAddress ip = WiFi.localIP();
+    IPAddress gateway = WiFi.gatewayIP();
+    Serial.print("IP Address: ");
+    Serial.println(ip);
 
 }
 
@@ -100,39 +103,57 @@ void loop() {
   //fetch location data
   getLocation();
   getIMUData();
-  //syncData(20, 30, 40);
 }
 void getLocation(){
-  // in case you are not using the interrupt above, you'll
-    // need to 'hand query' the GPS, not suggested :(
-    if (! usingInterrupt) {
-        char c = GPS.read();    // read data from the GPS in the 'main loop'
-        if (GPSECHO)            // if you want to debug, this is a good time to do it!
-            if (c) Serial.print(c);
+   // read data from the GPS in the 'main loop'
+  char c = GPS.read();
+  // if you want to debug, this is a good time to do it!
+  if (GPSECHO)
+    if (c) Serial.print(c);
+  // if a sentence is received, we can check the checksum, parse it...
+  if (GPS.newNMEAreceived()) {
+    // a tricky thing here is if we print the NMEA sentence, or data
+    // we end up not listening and catching other sentences!
+    // so be very wary if using OUTPUT_ALLDATA and trying to print out data
+    Serial.print(GPS.lastNMEA()); // this also sets the newNMEAreceived() flag to false
+    if (!GPS.parse(GPS.lastNMEA())) // this also sets the newNMEAreceived() flag to false
+      return; // we can fail to parse a sentence in which case we should just wait for another
+  }
+
+  // approximately every 2 seconds or so, print out the current stats
+  if (millis() - timer > 2000) {
+    timer = millis(); // reset the timer
+    Serial.print("\nTime: ");
+    if (GPS.hour < 10) { Serial.print('0'); }
+    Serial.print(GPS.hour, DEC); Serial.print(':');
+    if (GPS.minute < 10) { Serial.print('0'); }
+    Serial.print(GPS.minute, DEC); Serial.print(':');
+    if (GPS.seconds < 10) { Serial.print('0'); }
+    Serial.print(GPS.seconds, DEC); Serial.print('.');
+    if (GPS.milliseconds < 10) {
+      Serial.print("00");
+    } else if (GPS.milliseconds > 9 && GPS.milliseconds < 100) {
+      Serial.print("0");
     }
-    // if a sentence is received, we can check the checksum, parse it...
-    if (GPS.newNMEAreceived()) {
-        //Serial.println(GPS.lastNMEA());   // this also sets the newNMEAreceived() flag to false
-        if (!GPS.parse(GPS.lastNMEA()))   {
-          // this also sets the newNMEAreceived() flag to false
-          if (millis() - timer > 10000) {
-            // Spark.publish("GPS", "{ last: \""+String(GPS.lastNMEA())+"\"}", 60, PRIVATE );
-            // Spark.publish("GPS", "{ error: \"failed to parse\"}", 60, PRIVATE );
-            
-            //get location here
-            //mySerial.println(GPS.read());
-            Serial.println("Location: ");
-            
-            mySerial.println(GPS.latitude, 4); 
-            //mySerial.print(GPS.lat);
-            //mySerial.println(String(GPS.lat) + String(GPS.latitude));
-            //mySerial.println(String(GPS.lon) + String(GPS.longitude));
-          }
-          return;  // we can fail to parse a sentence in which case we should just wait for another
-        }
+    Serial.println(GPS.milliseconds);
+    Serial.print("Date: ");
+    Serial.print(GPS.day, DEC); Serial.print('/');
+    Serial.print(GPS.month, DEC); Serial.print("/20");
+    Serial.println(GPS.year, DEC);
+    Serial.print("Fix: "); Serial.print((int)GPS.fix);
+    Serial.print(" quality: "); Serial.println((int)GPS.fixquality);
+    if (GPS.fix) {
+      Serial.print("Location: ");
+      Serial.print(GPS.latitude, 4); Serial.print(GPS.lat);
+      Serial.print(", ");
+      Serial.print(GPS.longitude, 4); Serial.println(GPS.lon);
+      Serial.print("Speed (knots): "); Serial.println(GPS.speed);
+      Serial.print("Angle: "); Serial.println(GPS.angle);
+      Serial.print("Altitude: "); Serial.println(GPS.altitude);
+      Serial.print("Satellites: "); Serial.println((int)GPS.satellites);
+      syncData(GPS.longitude, GPS.latitude, 5);
     }
-    // if millis() or timer wraps around, we'll just reset it
-    if (timer > millis())  timer = millis();  
+  }
 }
 void getIMUData(){
     // Calculate the angle of the vector y,x
@@ -155,14 +176,24 @@ void keyPadControl(){
 void screenControl(){}
 void controlVibration(){}
 /*sends location cordinates, range and other data to ONLINE*/
-/*void syncData(float longitude, float latitude, float range){
-  Serial.println("making GET request");
+void syncData(float longitude, float latitude, float range){
+  Serial.println("Generate JSON from values");
+  String postData = "{\"longitude\": "+String(longitude)+", \"latitude\": "+String(latitude)+", \"range\": "+String(range)+"}";
+  Serial.println(postData);
   
-  String getQuery = "{\"longitude\": 34, \"latitude\": 72, \"range\": 5}";
-  client.beginRequest();
-  client.get("127.0.0.1:3000/location-details");
-  client.endRequest();
-  String message = client.responseBody();
-  Serial.println(message);
- 
-}*/
+  if(client.connect(server, 3000)){
+    client.println("POST /location-details HTTP/1.1");
+    client.println("Host: 127.0.0.1");
+    client.println("Content-Type: application/json");
+    client.print("Content-Length: ");
+    client.println(postData.length());
+    client.println();
+    client.print(postData);
+   }
+   if(client.connected()){
+    client.stop(); 
+   }
+   delay(3000);
+   Serial.println();
+   Serial.println("closing connection");
+}
