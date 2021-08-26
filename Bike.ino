@@ -1,3 +1,5 @@
+
+#include <WiFiNINA.h>
 #include <SPI.h>
 #include "Keypad.h"
 #include "Adafruit_GPS.h"
@@ -5,7 +7,6 @@
 #include "math.h"
 #include "MPU9250.h"
 #include "arduino_secrets.h"
-#include <WiFiNINA.h>
 
 #define mySerial Serial1
 Adafruit_GPS GPS(&mySerial);
@@ -79,7 +80,14 @@ void setup() {
     timer = millis();
   //swtch on screen
   //configure LED
-    //configure and test WiFi
+  //configure and test WiFi
+    while (status != WL_CONNECTED) {
+    //print connection attempt
+    Serial.print("Attempting to connect to Network named: ");
+    Serial.println(ssid);
+    status = WiFi.begin(ssid, pass);
+    delay(10000);
+  }
 
 }
 
