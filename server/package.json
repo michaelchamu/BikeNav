@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/michaelchamu/BikeNav#readme",
   "dependencies": {
+    "@googlemaps/google-maps-services-js": "^3.1.16",
     "express": "^4.17.1"
   }
 }
